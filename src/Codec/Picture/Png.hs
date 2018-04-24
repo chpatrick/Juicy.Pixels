@@ -23,6 +23,7 @@ module Codec.Picture.Png( -- * High level functions
                         , decodePng
                         , decodePngWithMetadata
                         , decodePngWithPaletteAndMetadata
+                        , decodePngSize
 
                         , writePng
                         , encodeDynamicPng
@@ -530,6 +531,12 @@ decodePngWithPaletteAndMetadata byte =  do
     in
     (, metadatas) <$>
         unparse ihdr palette transparencyColor (colourType ihdr) parseableData
+
+-- | Decode a PNG file's header and find its size, but don't decode image data.
+decodePngSize :: B.ByteString -> Either String ( Word32, Word32 )
+decodePngSize byte = do
+    rawHeader <- runGetStrict parseRawPngHeader byte
+    return ( width rawHeader, height rawHeader )
 
 {-# ANN module "HLint: ignore Reduce duplication" #-}
 

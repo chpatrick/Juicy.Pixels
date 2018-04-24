@@ -31,6 +31,7 @@ module Codec.Picture.Png.Type( PngIHdr( .. )
                              , PngLowLevel( .. )
                              , chunksWithSig
                              , mkRawChunk
+                             , parseRawPngHeader
                              ) where
 
 #if !MIN_VERSION_base(4,8,0)
@@ -348,15 +349,19 @@ instance Binary PngInterlaceMethod where
     put PngNoInterlace    = putWord8 0
     put PngInterlaceAdam7 = putWord8 1
 
+parseRawPngHeader :: Get PngIHdr
+parseRawPngHeader = do
+  sig <- getLazyByteString (L.length pngSignature)
+  when (sig /= pngSignature)
+       (fail "Invalid PNG file, signature broken")
+
+  get
+
 -- | Implementation of the get method for the PngRawImage,
 -- unpack raw data, without decompressing it.
 parseRawPngImage :: Get PngRawImage
 parseRawPngImage = do
-    sig <- getLazyByteString (L.length pngSignature)
-    when (sig /= pngSignature)
-         (fail "Invalid PNG file, signature broken")
-
-    ihdr <- get
+    ihdr <- parseRawPngHeader
 
     chunkList <- parseChunks
     return PngRawImage { header = ihdr, chunks = chunkList }
